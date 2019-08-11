@@ -1,7 +1,7 @@
 close all;
 clear; 
 
-Nofinput = 1;% number of inputs
+Nofinput = 6 ; % number of inputs
 MASKIMAGE = 'apple1.jpg';
 TESTIMAGE = 'apple2.jpg';
 OUTPUTNAME = 'recover.png';
@@ -9,35 +9,33 @@ OUTPUTNAME = 'recover.png';
 row=size(imread(MASKIMAGE,'jpg'),1);
 col=size(imread(MASKIMAGE,'jpg'),2); %find the dimensions of the 2D matirx
 
-
-[X1 , orig1] = Hadamard_learn(imread(MASKIMAGE,'jpg')); %[Normalized Original] 
-[X2 , orig2] = Hadamard_learn(imread(TESTIMAGE,'jpg'));
-
-% %********** Naive approach 1 ***************
-% new = zeros(row);
-% for i=1:Rightmost
-%     for j=1:Bottom
-%       new(i,j) = orig2(i,j);
-%     end
-% end 
-% 
-% %********** End ***************
-
-%************ Approach 2
-
 ref = imread('grayapple','png');
 refdouble = im2double(ref);
 SNRarray = zeros(20,1);
 
+
+% Training Image Hadamard Transform
+[NM1 , orig1] = Hadamard_learn(imread(MASKIMAGE,'jpg')); %[Normalized Original]
+[NM2 , orig2] = Hadamard_learn(imread('peach.jpg','jpg'));
+[NM3 , orig3] = Hadamard_learn(imread('melon.jpg','jpg'));
+[NM4 , orig4] = Hadamard_learn(imread('grape.jpg','jpg'));
+[NM5 , orig5] = Hadamard_learn(imread('kiwi.jpg','jpg'));
+[NM6 , orig6] = Hadamard_learn(imread('sw.jpg','jpg'));
+% Test image Hadamard Transform
+[Ntest , testspec] = Hadamard_learn(imread(TESTIMAGE,'jpg'));
+
+% Taking the average value of the spectrum 
+av = (orig1 + orig2 + orig3 + orig4 + orig5 + orig6)/Nofinput;
+
 for i = 1:20
-    [Sorted1,Threshold1] = arraylearn(orig1,row,0.05*i); % the higher the percentage, the higher the recover rate
-    mask = set201(Threshold1,orig1,row);
+    [Sorted1,Threshold1] = arraylearn(av,row,0.05*i); % the higher the percentage, the higher the recover rate
+    mask = set201(Threshold1,av,row);
     
-    needrec = orig1 .* mask;
+    needrec = testspec .* mask;
     
     output = rec(needrec);
     
-    if i==19
+    if i==15
         imwrite(output,OUTPUTNAME) %reconstructing image using function rec as defined
     end % Show specific image , for debug
     
@@ -56,6 +54,4 @@ title('PSNR against threshhold percentage');
 xlabel('Percentage Threshold / %');
 ylabel('PSNR');
 
-% Taking the average value of the spectrum 
-%av = (orig1 + orig2)/sizeofinput;
-%imwrite(rec(av),'averagerec.png')
+

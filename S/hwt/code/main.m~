@@ -25,29 +25,34 @@ col=size(imread(MASKIMAGE,'jpg'),2); %find the dimensions of the 2D matirx
 
 %************ Approach 2
 
-ref = imread('grayapple2','png');
+ref = imread('grayapple','png');
 refdouble = im2double(ref);
 SNRarray = zeros(10,1);
 
 for i = 1:20
     [Sorted1,Threshold1] = arraylearn(orig1,row,0.05*i); % the higher the percentage, the higher the recover rate
-    temp = set201(Threshold1,orig1,row);
+    mask = set201(Threshold1,orig1,row);
     
-    needrec = orig2 .* temp;
+    needrec = orig1 .* mask;
     
     output = rec(needrec);
     
-    % imwrite(output,OUTPUTNAME) %reconstructing image using function rec as defined
+    imwrite(output,OUTPUTNAME) %reconstructing image using function rec as defined
     
     peaksnr = psnr(output,refdouble);
     
-%     fprintf('\n The Peak-SNR value is %0.4f', peaksnr);
+    fprintf('\n The Peak-SNR value is %0.4f', peaksnr); % 0.4f => 4 digit precision
+    % The greater Peak SNR, the better the image
+    
     SNRarray(i,1) = peaksnr;
 end
 
 X=1:1:20;
 figure
-plot(X,SNRarray) 
+plot(X*0.05,SNRarray) 
+title('PSNR against threshhold percentage')
+xlabel('Per
+
 % Taking the average value of the spectrum 
 %av = (orig1 + orig2)/sizeofinput;
 %imwrite(rec(av),'averagerec.png')
