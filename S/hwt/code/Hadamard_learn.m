@@ -1,4 +1,4 @@
-function [Bnorm B] = Hadamard_learn(A)
+function B = Hadamard_learn(A)
 GRAY = rgb2gray(A);
 % imwrite(GRAY,'grayapple.png','png');
 % figure
@@ -10,7 +10,7 @@ B=fwht2d(I); %forward transform: hadamard spectrum B
 vmax=max(max(B)); %max() returns the max row or column vector take two times to return the max element
 vmin=min(min(B)); %same as above
 
-Bnorm=(B-vmin)/(vmax-vmin); %normalization specifies this feature
+% Bnorm=(B-vmin)/(vmax-vmin); %normalization specifies this feature
 % figure
 % imagesc(abs(Bnorm))
 % colorbar

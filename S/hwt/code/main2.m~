@@ -1,7 +1,7 @@
 close all;
 clear; 
 
-Nofinput = 4;% number of inputs
+Nofinput = 6 ; % number of inputs
 MASKIMAGE = 'apple1.jpg';
 TESTIMAGE = 'apple2.jpg';
 OUTPUTNAME = 'recover.png';
@@ -9,9 +9,9 @@ OUTPUTNAME = 'recover.png';
 row=size(imread(MASKIMAGE,'jpg'),1);
 col=size(imread(MASKIMAGE,'jpg'),2); %find the dimensions of the 2D matirx
 
-ref = imread('grayapple','png');
+ref = imread('grayapple2','png');
 refdouble = im2double(ref);
-SNRarray = zeros(20,1);
+SNRarray = zeros(40,1);
 
 
 % Training Image Hadamard Transform
@@ -21,38 +21,50 @@ SNRarray = zeros(20,1);
 [NM4 , orig4] = Hadamard_learn(imread('grape.jpg','jpg'));
 [NM5 , orig5] = Hadamard_learn(imread('kiwi.jpg','jpg'));
 [NM6 , orig6] = Hadamard_learn(imread('sw.jpg','jpg'));
-[NM7 , orig7] = Hadamard_learn(imread('grape.jpg','jpg'));
 % Test image Hadamard Transform
 [Ntest , testspec] = Hadamard_learn(imread(TESTIMAGE,'jpg'));
 
 % Taking the average value of the spectrum 
-av = (orig1 + orig2 + orig3 + orig4)/Nofinput;
+av = (orig1 + orig2 + orig3 + orig4 + orig5 + orig6)/Nofinput;
 
-for i = 1:20
-    [Sorted1,Threshold1] = arraylearn(av,row,0.05*i); % the higher the percentage, the higher the recover rate
-    mask = set201(Threshold1,av,row);
+% figure
+% imagesc(abs(av));
+% colorbar;
+figure
+imshow(refdouble); title('Reference Image');
+
+for i = 1:40
+    [Sorted1,Threshold1] = arraylearn(av,row,0.025*i); % the higher the percentage, the higher the recover rate
+    mask = set201(Threshold1,av);
     
-    needrec = testspec .* mask;
+    needrec = (testspec.* mask);
     
     output = rec(needrec);
     
-    if i==15
+%   figure;imagesc(output);axis image;colormap jet;
+    if i==30
         imwrite(output,OUTPUTNAME) %reconstructing image using function rec as defined
-    end % Show specific image , for debug
+        writeout= mask;
+    end
     
     peaksnr = psnr(output,refdouble);
     
     fprintf('\n The Peak-SNR value is %0.4f', peaksnr); % 0.4f => 4 digit precision
     % The greater Peak SNR, the better the image
-    
+    subplot(3,3,)); imshow(output);   title('Recovered Image');
     SNRarray(i,1) = peaksnr;
 end
 
-X=1:1:20;
+X=1:1:40;
 figure
-plot(X*0.05,SNRarray,'-o') 
+plot(X*0.025,SNRarray,'-o') 
 title('PSNR against threshhold percentage');
 xlabel('Percentage Threshold / %');
 ylabel('PSNR');
 
 
+figure
+[ssimval, ssimmap] = ssim(output,refdouble);
+fprintf('\n The SSIM value is %0.4f.\n',ssimval);
+imshow(ssimmap,[]);
+title(sprintf('\n ssim Index Map - Mean ssim Value is %0.4f',ssimval));
