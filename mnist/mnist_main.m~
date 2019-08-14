@@ -1,21 +1,21 @@
 close all;
 
 Nofinput = length(namelist) ; % number of inputs
-TESTIMAGE = 'test.png';
+TESTIMAGE = 'five_1.jpg';
 OUTPUTNAME = 'recover.png';
 
 SNRarray = zeros(10,1);
 SNRarrayown = zeros(10,1);
 
+ref = imread(TESTIMAGE);
+refdouble = im2double(ref);
+Orig = zeros(64,64,Nofinput);
 
 % Training Image Hadamard Transform
 for readindex=1:Nofinput
-    if readindex==1
-        Orig = Hadamard_learn(imread(namelist(readindex));
-    else
-        Orig(:,:,readindex) = Hadamard_learn(imread(namelist(readindex));
-    end
-    
+    temp = imread(strtrim(list(:,:,readindex)));
+    rstemp = imresize(temp,[64 64]);
+    Orig(:,:,readindex) = Hadamard(rtemp);
 end
 
 % Test image Hadamard Transform
@@ -23,7 +23,8 @@ testspec = Hadamard_learn(imread(TESTIMAGE,'jpg'));
 
 % Taking the average value of the spectrum 
 
-av = sum(Orig,3)/Nofinput; % sum along the third dimension
+av = sum(Orig,3)/Nofinput;
+
 
 for i = 1:10
     [Sorted1,Threshold1] = arraylearn(av,row,0.1*i); % the higher the percentage, the higher the recover rate
@@ -65,4 +66,4 @@ ylabel('PSNR / dB');
 [ssimval, ssimmap] = ssim(output,refdouble);
 fprintf('\n The SSIM value is %0.4f.\n',ssimval);
 % imshow(ssimmap,[]);
-% title(sprintf('\n ssim Index Map - Mean ssim Value is %0.4f',ssimval));
+% title(sprintf('\n ssim Index Map - Mean ssim Value is %0.4f',ssimval))
