@@ -1,10 +1,10 @@
 function B = Hadamard_learn(A)
-GRAY = rgb2gray(A);
+% GRAY = rgb2gray(A);
 % imwrite(GRAY,'grayapple.png','png');
 % figure
 % imshow(GRAY)
 
-I=im2double(GRAY);
+I=im2double(A);
 
 B=fwht2d(I); %forward transform: hadamard spectrum B
 vmax=max(max(B)); %max() returns the max row or column vector take two times to return the max element

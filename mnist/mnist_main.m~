@@ -1,33 +1,29 @@
 close all;
 
-Nofinput = 6 ; % number of inputs
-MASKIMAGE = 'apple1.jpg';
-TESTIMAGE = 'apple2.jpg';
+Nofinput = length(namelist) ; % number of inputs
+TESTIMAGE = 'test.png';
 OUTPUTNAME = 'recover.png';
 
-row=size(imread(MASKIMAGE,'jpg'),1);
-col=size(imread(MASKIMAGE,'jpg'),2); %find the dimensions of the 2D matirx
-
-ref = imread('grayapple2','png');
-refdouble = im2double(ref);
 SNRarray = zeros(10,1);
 SNRarrayown = zeros(10,1);
 
 
 % Training Image Hadamard Transform
-orig1 = Hadamard_learn(imread(MASKIMAGE,'jpg')); %[Normalized Original]
-orig2 = Hadamard_learn(imread('peach.jpg','jpg'));
-orig3 = Hadamard_learn(imread('melon.jpg','jpg'));
-orig4 = Hadamard_learn(imread('grape.jpg','jpg'));
-orig5 = Hadamard_learn(imread('kiwi.jpg','jpg'));
-orig6 = Hadamard_learn(imread('sw.jpg','jpg'));
+for readindex=1:Nofinput
+    if readindex==1
+        Orig = Hadamard_learn(imread(namelist(readindex));
+    else
+        Orig(:,:,readindex) = Hadamard_learn(imread(namelist(readindex));
+    end
+    
+end
+
 % Test image Hadamard Transform
 testspec = Hadamard_learn(imread(TESTIMAGE,'jpg'));
 
 % Taking the average value of the spectrum 
-av = (orig1 + orig2 + orig3 + orig4 + orig5 + orig6)/Nofinput;
 
-imshow(refdouble);title('Reference Image');
+av = sum(Orig,3)/Nofinput; % sum along the third dimension
 
 for i = 1:10
     [Sorted1,Threshold1] = arraylearn(av,row,0.1*i); % the higher the percentage, the higher the recover rate

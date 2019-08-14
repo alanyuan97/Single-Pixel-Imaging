@@ -15,12 +15,12 @@ function xx = ifwht2d(xx)
 
 N = length(xx);
     for i = 1:N
-        xx1(i,:) = fhtseq(xx(i,:)); 
+        xx1(i,:) = fhtdya(xx(i,:)); 
     end
 % REPLACE fhtseq BY fhtdya FOR DYADIC ORDER AND fhtnat FOR NATURAL ORDER
 xx = zeros(N);
     for j = 1:N
-        xx(:,j) = fhtseq(xx1(:,j)')';
+        xx(:,j) = fhtdya(xx1(:,j)')';
     end
 
 %-------------------------------------------------------
