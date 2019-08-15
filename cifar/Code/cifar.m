@@ -7,7 +7,7 @@ tic;
 namelist = strings;
 index = 1;
 
-find = 0 ;
+findbool1 = 0 ;
 
 for i=1:500
     if labels(i,1)==CATAGORY-1
@@ -25,7 +25,7 @@ for i=1:500
 end 
 
 for i = 3001:3100
-    if labels(i,1)==CATAGORY-1 & find ==0 
+    if labels(i,1)==CATAGORY-1 & findbool1 ==0 
         str = 'test.jpg';
         temp = zeros(32,32,3);
         temp(:,:,1) = reshape(data(i,1:1024),32,32)';
@@ -34,7 +34,7 @@ for i = 3001:3100
         rgb= uint8(temp);
         gray = rgb2gray(rgb);
         imwrite(gray,str)
-        find = 1;
+        findbool1 = 1;
         % MATLAB does not support the increment operator ++
     end
 end

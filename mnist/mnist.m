@@ -2,18 +2,18 @@ close all;
 % code when need to load data in
 % **********************************
 tic;
-% datain = load('mnist_train.csv');
-% 
-% numlabels = datain(:,1);
-% 
-% numimages = datain(:,2:785);
+datain = load('mnist_train.csv');
+
+numlabels = datain(:,1);
+
+numimages = datain(:,2:785);
 % **********************************
 
 % Display elasped time in seconds 
 
 namelist = strings;
 index=1;
-find = 0 ;
+findbool = 0 ;
 LABEL = 'three';
 
 for i = 1:2000
@@ -27,12 +27,12 @@ for i = 1:2000
 end
 
 for i = 3001:3100
-    if numlabels(i,1)==3 & find ==0 
+    if numlabels(i,1)==3 & findbool ==0 
         str = 'test.jpg';
         imwrite(reshape(numimages(i,:),28,28)',str)
         namelist(index)=str;
         index = index +1;
-        find = 1;
+        findbool = 1;
         % MATLAB does not support the increment operator ++
     end
 end

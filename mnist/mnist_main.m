@@ -4,7 +4,7 @@ tic;
 close all;
 
 Nofinput = length(namelist) ; % number of inputs
-TESTIMAGE = 'test.jpg';
+TESTIMAGE = 'test3.jpg';
 OUTPUTNAME = 'recover.jpg';
 
 SNRarray = zeros(10,1);
@@ -32,8 +32,8 @@ testspec = Hadamard(rsTest);
 av = sum(Orig,3)/Nofinput;
 row = 64;
 
-for i = 1:10
-    [Sorted1,Threshold1] = arraylearn(av,row,0.1*i); % the higher the percentage, the higher the recover rate
+for i = 1:20
+    [Sorted1,Threshold1] = arraylearn(av,row,0.05*i); % the higher the percentage, the higher the recover rate
     mask = set201(Threshold1,av,row); % replaced av
     maskown = set201(Threshold1,testspec,row);
     
@@ -52,7 +52,7 @@ for i = 1:10
     
     fprintf('\n The Peak-SNR value is %0.4f', peaksnr); % 0.4f => 4 digit precision
     % The greater Peak SNR, the better the image
-    subplot(2,5,i); imshow(output);   title(['Recovered Image ',num2str(10*i),'%']);
+    subplot(4,5,i); imshow(output);   title(['Recovered Image ',num2str(10*i),'%']);
 %     subplot(2,5,i); imagesc(mask); colormap gray; title(['Mask Rate',num2str(10*i),'%']);
 
     SNRarray(i,1) = peaksnr;
@@ -60,11 +60,11 @@ for i = 1:10
 end
 
 
-X=1:1:10;
+X=1:1:20;
 figure
-plot(X*0.1,SNRarray,'b--o')
+plot(X*0.05,SNRarray,'b--o')
 hold on 
-plot (X*0.1,SNRarrayown,'r--o');
+plot (X*0.05,SNRarrayown,'r--o');
 legend('Average','Own');
 title('PSNR against threshhold percentage');
 xlabel('Percentage Threshold / %');
