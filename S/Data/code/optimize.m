@@ -19,7 +19,7 @@ correct10 = zeros(10,1);
 Srow = [];
 Scol = [];
 
-for looptime = 1:400
+for looptime = 1:100
     
     if looptime  == 1
         inputspec = Hadamard(refdouble);
@@ -64,7 +64,7 @@ for looptime = 1:400
 
     Final_rec = Hadamard(refdouble) .* opmask;
     
-    if mod(looptime,20)==0
+    if mod(looptime,5)==0
         count = count +1;
         output = rec(Final_rec);
         % subplot(4,5,looptime); imagesc(opmask); colormap gray; title(['Iteration loop ',num2str(looptime)]);
@@ -73,12 +73,5 @@ for looptime = 1:400
         SNRarray_train(count,1) = peaksnr;
     end
 end 
-
-X=1:1:20;
-figure
-plot(X,SNRarray_train,'b--o')
-title('PSNR against threshhold percentage');
-xlabel('Iteration loops');
-ylabel('PSNR / dB');
 
 toc;
