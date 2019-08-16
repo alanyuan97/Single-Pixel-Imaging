@@ -1,3 +1,6 @@
+% THIS CODE GENERATES THE WHOLE SET OF TESTDATA AND NAMELIST
+% RUN FOR THE FIRST TIME
+
 close all;
 % code when need to load data in
 % **********************************
@@ -22,7 +25,6 @@ for i = 1:2000
         imwrite(reshape(numimages(i,:),28,28)',str)
         namelist(index)=str;
         index = index +1;
-        % MATLAB does not support the increment operator ++
     end
 end
 
@@ -33,7 +35,6 @@ for i = 3001:3100
         namelist(index)=str;
         index = index +1;
         findbool = 1;
-        % MATLAB does not support the increment operator ++
     end
 end
 

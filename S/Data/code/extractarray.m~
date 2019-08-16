@@ -1,0 +1,19 @@
+
+function SortedArray = extractarray(InputArray,maskin,row_in,col_in,dim,number_of_inputs)
+    temp = reshape(InputArray,[dim*dim 1]);
+    SortedArray = sort(abs(temp),'descend');
+    count = 0;
+    for i = 1:length(SortedArray)
+        if count<=number_of_inputs
+            for index = 1:length(row_in)
+                if
+            end
+        end
+    end
+end
+
+
+
+
+%     downThresholdvalue = SortedArray(downindex);
+%     upThresholdvalue = SortedArray(upindex);

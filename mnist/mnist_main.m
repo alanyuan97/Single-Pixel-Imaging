@@ -1,3 +1,8 @@
+% This code generates a 3D array that contains the Hadamard 
+% spectrum (Orig), such that code optimize.m can take as an input.
+% This code also plot the PSNR against the pecentage of threshold. 
+% Also, it compares the PSNR while using the original mask. 
+
 
 tic;
 
@@ -43,7 +48,7 @@ for i = 1:20
     output = rec(needrec);
     outputown = rec(needrecown);
 
-    if i==5
+    if i==19
         imwrite(output,OUTPUTNAME) %reconstructing image using function rec as defined
         writeout= mask;
     end
