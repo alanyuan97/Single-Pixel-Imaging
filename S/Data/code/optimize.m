@@ -113,7 +113,7 @@ for looptime = 1:LOOPMAX
         axis image;colormap gray;
         title(['Pixels used ',num2str(10*looptime), ' / SSIM ', num2str(ssimval)]);
         
-        peaksnr = psnr(output,refdouble);
+        peaksnr = psnr(outputnorm,refnorm);
         SNRarray_train(count,1) = peaksnr;
     end
 end

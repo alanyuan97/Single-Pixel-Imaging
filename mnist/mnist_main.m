@@ -38,7 +38,7 @@ av = sum(Orig,3)/Nofinput;
 row = 64;
 
 for i = 1:20
-    [Sorted1,Threshold1] = arraylearn(av,row,0.05*i); % the higher the percentage, the higher the recover rate
+    [Sorted1,Threshold1] = arraylearn(av,row,0.0122*i); % the higher the percentage, the higher the recover rate
     mask = set201(Threshold1,av,row); % replaced av
     maskown = set201(Threshold1,testspec,row);
     
