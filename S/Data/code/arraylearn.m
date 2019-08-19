@@ -6,10 +6,9 @@
 % SAMPLE CODE ABOVE
 
 % Threshold defined as percentage 
-function [SortedArray,Thresholdvalue] = arraylearn(InputArray,dim,Thresholdpercentage)
+function Thresholdvalue = arraylearn(InputArray,dim,Thresholdpercentage)
     temp = reshape(InputArray,[dim*dim 1]);
     SortedArray = sort(abs(temp),'descend');
-    % Maxdif = SortedArray(1) - SortedArray(length(SortedArray));
     maxindex = round(length(SortedArray)*Thresholdpercentage);
     Thresholdvalue = SortedArray(maxindex);
 end

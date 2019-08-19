@@ -3,22 +3,18 @@
 % This code also plot the PSNR against the pecentage of threshold. 
 % Also, it compares the PSNR while using the original mask. 
 
-
+function [store_mask_average,SNRarray,SNRarrayown,SNRarrayzig,av,Orig] = mnist_main(Nofinput,list,testname)
 tic;
 
-close all;
+coef = 0.0488;
+row = 64;
+SNRarray = zeros(20,1);
+SNRarrayown = zeros(20,1);
+SNRarrayzig = zeros(20,1);
+store_mask_average = zeros(64,64,20);
 
-Nofinput = length(namelist) ; % number of inputs
-TESTIMAGE = 'test3.jpg';
-OUTPUTNAME = 'recover.jpg';
-
-SNRarray = zeros(10,1);
-SNRarrayown = zeros(10,1);
-
-ref = imread(TESTIMAGE);
-refdouble = imresize(im2double(ref),[64 64]);
 Orig = zeros(64,64,Nofinput);
-
+zigzag_array = zeros(4096,1);
 
 % Training Image Hadamard Transform
 for readindex=1:Nofinput
@@ -28,56 +24,51 @@ for readindex=1:Nofinput
 end
 
 % Test image Hadamard Transform
-Test = imread(TESTIMAGE);
-rsTest = imresize(Test,[64 64]);
-testspec = Hadamard(rsTest);
+
+testdata = imread(testname);
+
+refdouble = imresize(im2double(testdata),[64 64]);
+
+vmax=max(max(refdouble));
+vmin=min(min(refdouble));
+refnorm=(refdouble-vmin)/(vmax-vmin);
+testspec = Hadamard(refnorm);
 
 % Taking the average value of the spectrum 
 
 av = sum(Orig,3)/Nofinput;
-row = 64;
 
 for i = 1:20
-    [Sorted1,Threshold1] = arraylearn(av,row,0.0122*i); % the higher the percentage, the higher the recover rate
-    mask = set201(Threshold1,av,row); % replaced av
-    maskown = set201(Threshold1,testspec,row);
+    Threshold1 = arraylearn(av,row,coef*i); % the higher the percentage, the higher the recover rate
+    Threshold2 = arraylearn(testspec,row,coef*i);
+    
+    
+    zigzag_array((i-1)*204+1:204*i)=1;
+    mask_zigzag = invzigzag(zigzag_array,row,row);
+    mask = set201(Threshold1,av,row);
+    maskown = set201(Threshold2,testspec,row);
     
     needrec = (testspec.* mask);
     needrecown = (testspec.* maskown);
+    needreczigzag = (testspec.* mask_zigzag);
     
     output = rec(needrec);
     outputown = rec(needrecown);
-
-    if i==19
-        imwrite(output,OUTPUTNAME) %reconstructing image using function rec as defined
-        writeout= mask;
-    end
+    outputzig = rec(needreczigzag);
     
-    peaksnr = psnr(output,refdouble);
-    
-    fprintf('\n The Peak-SNR value is %0.4f', peaksnr); % 0.4f => 4 digit precision
+    store_mask_average(:,:,i)=mask;
+   
+  
+    % fprintf('\n The Peak-SNR value is %0.4f \n', peaksnr); % 0.4f => 4 digit precision
     % The greater Peak SNR, the better the image
-    subplot(4,5,i); imshow(output);   title(['Recovered Image ',num2str(10*i),'%']);
-%     subplot(2,5,i); imagesc(mask); colormap gray; title(['Mask Rate',num2str(10*i),'%']);
+    
+    % subplot(4,5,i); imshow(outputzig);   title(['Recovered Image ',num2str(5*i),'%']);  
+%     subplot(4,5,i); imagesc(maskown); colormap gray; title(['Sampling Rate ',num2str(5*i),'%']);
 
-    SNRarray(i,1) = peaksnr;
-    SNRarrayown(i,1) = psnr(outputown,refdouble);
+    SNRarray(i,1) = psnr(output,refnorm);
+    SNRarrayown(i,1) = psnr(outputown,refnorm);
+    SNRarrayzig(i,1) = psnr(outputzig,refnorm);
 end
 
-
-X=1:1:20;
-figure
-plot(X*0.05,SNRarray,'b--o')
-hold on 
-plot (X*0.05,SNRarrayown,'r--o');
-legend('Average','Own');
-title('PSNR against threshhold percentage');
-xlabel('Percentage Threshold / %');
-ylabel('PSNR / dB');
-
-[ssimval, ssimmap] = ssim(output,refdouble);
-fprintf('\n The SSIM value is %0.4f.\n',ssimval);
-% imshow(ssimmap,[]);
-% title(sprintf('\n ssim Index Map - Mean ssim Value is %0.4f',ssimval));
-
 toc;
+end
