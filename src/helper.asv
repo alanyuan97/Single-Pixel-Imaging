@@ -103,7 +103,7 @@ classdef helper
                 % Find the coordinates of chosen pixels
                 [Crow,Ccol] = find(abs(inputspec)>=downthreshold & abs(inputspec)<=upthreshold);
                 % Construct coordinate list
-                if i ==1
+                if looptime ==1
                     coordinates = [Crow Ccol];
                 else 
                     coordinates = cat(1,coordinates,[Crow Ccol]);
@@ -128,25 +128,20 @@ classdef helper
                 top10page = my_av_dist(obj.data,correct10,obj.number_input,length(Crow),Crow,Ccol,8);
                 % Recover image with mask
                 Final_rec = testspec .* a;
-                stored_mask(:,:,i)=a;
-                output = img_norm(rec(Final_rec));
-                
-                % Threshold to make black and white
+                stored_mask(:,:,looptime)=a;
+                output = rec(Final_rec);
                 if obj.THRESHOLD_FLAG ==1
                     outputav(outputav<0.5)=0;
                     outputav(outputav>0.5)=1;
                     outputtest(outputtest<0.5)=0;
                     outputtest(outputtest>0.5)=1;
                     outputzig(outputzig<0.5)=0;
-                    outputzig(outputzig>0.5)=1;          
-                    output(output<0.5)=0;
-                    output(output>0.5)=1;
+                    outputzig(outputzig>0.5)=1;
                 end
-                
                 % Print recovered images
-                if i == 6 || i == 12 || i == 18 || i == 24 || i == 30
+                if i == 6 || i == 12 || i == 18 || i == 24
                     figure
-                    sgtitle(['Recovered @ sampling rate ',num2str(round(samplingrate)),' %'])
+                    sgtitle(['Recovered images',num2str(round(samplingrate))])
                     subplot(2,2,1)
                     imshow(outputav)
                     title('Average')
@@ -156,9 +151,7 @@ classdef helper
                     subplot(2,2,2)
                     imshow(outputzig)
                     title('Zig-Zag')
-                    subplot(2,2,4)
-                    imshow(output)
-                    title('Optimized')
+                    
                 end
 %                 % Store mask to future use
 %                 store_mask_average(:,:,1,i)=maskav;
@@ -185,18 +178,30 @@ classdef helper
                 energy_av(i,2)= samplingrate;
                 energy_test(i,2)= samplingrate;
                 energy_zig(i,2)= samplingrate;
-               
+                
+                
+            end
+            % ----------------END OF ITERATIVE CODE -------------------
+            
+
+            
+            for looptime = 1:max_iteration
+   
+                % Threshold to make black and white
+                if obj.THRESHOLD_FLAG ==1
+                    output(output<0.5)=0;
+                    output(output>0.5)=1;
+                end
                 % PSNR & SSIM
-                SNRarrayOP(i,1) = psnr(output,refnorm);
-                ssimOP(i,1)= ssim(output,refnorm);
-                samplingrate = 100*sum(sum(a))/obj.N^2;
-                SNRarrayOP(i,2) = samplingrate;
-                ssimOP(i,2) = samplingrate;
-                energyOP(i,1)= sum(sum(abs(Final_rec)))/sum(sum(abs(testspec)));
-                energyOP(i,2)= samplingrate;
+                SNRarrayOP(looptime,1) = psnr(output,refnorm);
+                ssimOP(looptime,1)= ssim(output,refnorm);
+                samplingrate = 100*looptime*endindex/obj.N^2;
+                SNRarrayOP(looptime,2) = samplingrate;
+                ssimOP(looptime,2) = samplingrate;
+                energyOP(looptime,1)= sum(sum(abs(Final_rec)))/sum(sum(abs(testspec)));
+                energyOP(looptime,2)= samplingrate;
             end
             toc;
-            
             if obj.PRINTFLAG == 1
                 % Print, otherwise disable to fasten
                 
@@ -222,15 +227,15 @@ classdef helper
                 
                 % Code for SSIM plot
                 figure
-                plot (ssimarrayav(:,2),ssimarrayav(:,1),'LineWidth',1.5,'Color','b');
+                plot (SNRarrayav(:,2),SNRarrayav(:,1),'LineWidth',1.5,'Color','b');
                 grid on
                 grid minor
                 hold on
                 % plot(ssim_own(:,2),ssim_own(:,1),'r--')
                 % hold on 
-                plot (ssimOP(:,2),ssimOP(:,1),'LineWidth',1.5,'Color','m')
+                plot (SNRarrayOP(:,2),SNRarrayOP(:,1),'LineWidth',1.5,'Color','m')
                 hold on 
-                plot (ssimzig(:,2),ssimzig(:,1),'LineWidth',1.5,'Color','k')
+                plot (SNRarrayzig(:,2),SNRarrayzig(:,1),'LineWidth',1.5,'Color','k')
                 lgd = legend('Average','Optimized','Zigzag','Location','northwest');
                 lgd.FontSize = 30;
                 lgd.FontName = 'Times New Roman';
