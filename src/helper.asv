@@ -1,15 +1,15 @@
-% HELP: 1. Use xx = helper(data,THRESHOLD_FLAG,PRINTFLAG), 
+% HELP: 1. Use xx = helper(data,THRESHOLD_FLAG,PRINTFLAG),
 %          PRINTFLAG = 1 to print figure, PRINTFLAG = 0 no print
 %          THRESHOLD_FLAG = 1 for black/white, THRESHOLD_FLAG = 0 otherwise
-
+%
 %       2. xx.test(testdata,iteration, max_sample_rate,stepsize)
 %       I.E. If image is 32*32, choose step size to be 8, then 32*32/8 =
 %       128 iteration; Sample rate : 0-1, (how many percentage of pixels
-%       used) 
+%       used)
 
 classdef helper
     properties
-        data % Data of which operating on 
+        data % Data of which operating on
         N % Dimension, i.e. 32*32
         number_input % Number of training images
         avmask % Average spectrum
@@ -30,14 +30,6 @@ classdef helper
         
         function test(obj,testdata,max_iteration,max_sample_rate,endindex)
             tic;
-            % Test image data + Normalize 
-            refnorm = img_norm(testdata);
-            testspec = Hadamard_trans(refnorm);
-            
-            coef = max_sample_rate / max_iteration;
-            % Allocate space for zigzag mask
-            zigzag_array = zeros(obj.N^2,1);
-            seq = cat(2,1:1:obj.N,obj.N-1:-1:1);
             % Initialize data, allocate memory space
             SNRarrayav = zeros(max_iteration,2);
             SNRarraytest = zeros(max_iteration,2);
@@ -48,173 +40,181 @@ classdef helper
             energy_av = zeros(max_iteration,2);
             energy_test = zeros(max_iteration,2);
             energy_zig = zeros(max_iteration,2);
-%             store_mask_average = zeros(obj.N,obj.N,2,max_iteration);
-           
-            % ----------------Optimize code -- My method --------------
-            % Initialize data
             SNRarrayOP = zeros(max_iteration,2);
             ssimOP = zeros(max_iteration,2);
             energyOP = zeros(max_iteration,2);
-            stored_mask = zeros(obj.N,obj.N,max_iteration);
-            % List of temp distance of closest 10 points 
-            correct10 = zeros(8,1);
-            % TEMP var, can ignore 
-            a = zeros(obj.N);
-            
-            
-            for i = 1:max_iteration
-                samplingrate = 100*coef*i;
-                zigzag_array(1:sum(seq(1:round((2*obj.N-1)*coef*i))))=1;
-                % Obtain threshold values for mask
-                avthrs = arraylearn(obj.avmask,obj.N,coef*i); % the higher the percentage, the higher the recover rate
-                testthrs = arraylearn(testspec,obj.N,coef*i);
-                % Construct masks 
-                mask_zigzag = invzigzag(zigzag_array,obj.N,obj.N);
-                maskav = set201(avthrs,obj.avmask,obj.N);
-                masktest = set201(testthrs,testspec,obj.N);
-                % Partially pick pixels from mask obtained
-                needrecav = (testspec.* maskav);
-                needrectest = (testspec.* masktest);
-                needreczigzag = (testspec.* mask_zigzag);
-                % Reconstuct image from spectrum
-                outputav = img_norm(rec(needrecav));
-                outputtest = img_norm(rec(needrectest));
-                outputzig = img_norm(rec(needreczigzag));
-                % Set threshold of 0.5 => Binary image (Black and white)
-                % Otherwise, remove lines below 
+
+            for test_run = 1:size(testdata,3)
+                % Test image data + Normalize
+                refnorm = img_norm(testdata(:,:,test_run));
+                testspec = Hadamard_trans(refnorm);
                 
-                if i  == 1
-                    % Find the first 10 coordinates by default
-                    inputspec= obj.avmask;
-                else
-                    % otherwise, take previous page as input
-                    add_result = zeros(obj.N);
-                    for pageindex = 1:length(top10page)
-                        add_result = add_result + abs(obj.data(:,:,top10page(pageindex)));
+                coef = max_sample_rate / max_iteration;
+                % Allocate space for zigzag mask
+                zigzag_array = zeros(obj.N^2,1);
+                seq = cat(2,1:1:obj.N,obj.N-1:-1:1);
+
+                % store_mask_average = zeros(obj.N,obj.N,2,max_iteration);
+                
+                % ----------------Optimize code -- My method --------------
+                % Initialize data
+
+                % stored_mask = zeros(obj.N,obj.N,max_iteration);
+                % List of temp distance of closest 10 points
+                correct10 = zeros(8,1);
+                % TEMP var, can ignore
+                a = zeros(obj.N);
+                
+                
+                for i = 1:max_iteration
+                    samplingrate = 100*coef*i;
+                    zigzag_array(1:sum(seq(1:round((2*obj.N-1)*coef*i))))=1;
+                    % Obtain threshold values for mask
+                    avthrs = arraylearn(obj.avmask,obj.N,coef*i); % the higher the percentage, the higher the recover rate
+                    testthrs = arraylearn(testspec,obj.N,coef*i);
+                    % Construct masks
+                    mask_zigzag = invzigzag(zigzag_array,obj.N,obj.N);
+                    maskav = set201(avthrs,obj.avmask,obj.N);
+                    masktest = set201(testthrs,testspec,obj.N);
+                    % Partially pick pixels from mask obtained
+                    needrecav = (testspec.* maskav);
+                    needrectest = (testspec.* masktest);
+                    needreczigzag = (testspec.* mask_zigzag);
+                    % Reconstuct image from spectrum
+                    outputav = img_norm(rec(needrecav));
+                    outputtest = img_norm(rec(needrectest));
+                    outputzig = img_norm(rec(needreczigzag));
+                    % Set threshold of 0.5 => Binary image (Black and white)
+                    % Otherwise, remove lines below
+                    
+                    if i  == 1
+                        % Find the first 10 coordinates by default
+                        inputspec= obj.avmask;
+                    else
+                        % otherwise, take previous page as input
+                        add_result = zeros(obj.N);
+                        for pageindex = 1:length(top10page)
+                            add_result = add_result + abs(obj.data(:,:,top10page(pageindex)));
+                        end
+                        av_spec = add_result/pageindex;
+                        % Obtain average Hadamard Spectrum
+                        inputspec = av_spec .* flip_mask;
                     end
-                    av_spec = add_result/pageindex;
-                    % Obtain average Hadamard Spectrum
-                    inputspec = av_spec .* flip_mask;
-                end
-                % increment amount = > 10 points per loop   
-                sortedarray = extractarray(inputspec,obj.N);
-                upthreshold = sortedarray(1);
-                downthreshold = sortedarray(endindex);
-                % Find the coordinates of chosen pixels
-                [Crow,Ccol] = find(abs(inputspec)>=downthreshold & abs(inputspec)<=upthreshold);
-                % Construct coordinate list
-                if looptime ==1
-                    coordinates = [Crow Ccol];
-                else 
-                    coordinates = cat(1,coordinates,[Crow Ccol]);
-                end
-
-                tempmask = zeros(obj.N);
-
-                for ii=1:obj.N
-                    for jj=1:obj.N
-                        for inner_index=1:length(Crow)
-                            if(ii == Crow(inner_index) && jj == Ccol(inner_index))
-                                tempmask(ii,jj) = 1;
+                    % increment amount = > 10 points per loop
+                    sortedarray = extractarray(inputspec,obj.N);
+                    upthreshold = sortedarray(1);
+                    downthreshold = sortedarray(endindex);
+                    % Find the coordinates of chosen pixels
+                    [Crow,Ccol] = find(abs(inputspec)>=downthreshold & abs(inputspec)<=upthreshold);
+                    % Construct coordinate list
+                    if i ==1
+                        coordinates = [Crow Ccol];
+                    else
+                        coordinates = cat(1,coordinates,[Crow Ccol]);
+                    end
+                    
+                    tempmask = zeros(obj.N);
+                    
+                    for ii=1:obj.N
+                        for jj=1:obj.N
+                            for inner_index=1:length(Crow)
+                                if(ii == Crow(inner_index) && jj == Ccol(inner_index))
+                                    tempmask(ii,jj) = 1;
+                                end
+                                correct10(inner_index,1) = inputspec(Crow(inner_index),Ccol(inner_index));
                             end
-                             correct10(inner_index,1) = inputspec(Crow(inner_index),Ccol(inner_index));
                         end
                     end
-                end
-
-                a(tempmask>0|a>0)=1;
-                flip_mask = 1.-a;
-                % flip 1 to 0 // 0 to 1    
-                top10page = my_av_dist(obj.data,correct10,obj.number_input,length(Crow),Crow,Ccol,8);
-                % Recover image with mask
-                Final_rec = testspec .* a;
-                stored_mask(:,:,looptime)=a;
-                output = rec(Final_rec);
-                if obj.THRESHOLD_FLAG ==1
-                    outputav(outputav<0.5)=0;
-                    outputav(outputav>0.5)=1;
-                    outputtest(outputtest<0.5)=0;
-                    outputtest(outputtest>0.5)=1;
-                    outputzig(outputzig<0.5)=0;
-                    outputzig(outputzig>0.5)=1;
-                end
-                % Print recovered images
-                if i == 6 || i == 12 || i == 18 || i == 24
-                    figure
-                    sgtitle(['Recovered images',num2str(round(samplingrate))])
-                    subplot(2,2,1)
-                    imshow(outputav)
-                    title('Average')
-                    subplot(2,2,3)
-                    imshow(outputtest)
-                    title('Original')
-                    subplot(2,2,2)
-                    imshow(outputzig)
-                    title('Zig-Zag')
                     
+                    a(tempmask>0|a>0)=1;
+                    flip_mask = 1.-a;
+                    % flip 1 to 0 // 0 to 1
+                    top10page = my_av_dist(obj.data,correct10,obj.number_input,length(Crow),Crow,Ccol,16);
+                    % Recover image with mask
+                    Final_rec = testspec .* a;
+                    % stored_mask(:,:,i)=a;
+                    output = img_norm(rec(Final_rec));
+                    
+                    % Threshold to make black and white
+                    if obj.THRESHOLD_FLAG ==1
+                        outputav(outputav<0.5)=0;
+                        outputav(outputav>0.5)=1;
+                        outputtest(outputtest<0.5)=0;
+                        outputtest(outputtest>0.5)=1;
+                        outputzig(outputzig<0.5)=0;
+                        outputzig(outputzig>0.5)=1;
+                        output(output<0.5)=0;
+                        output(output>0.5)=1;
+                    end
+                    
+                    % Print recovered images
+                    if (i == 6 || i == 12 || i == 18 || i == 24 || i == 30) && 0
+                        figure
+                        sgtitle(['Recovered @ sampling rate ',num2str(round(samplingrate)),' %'])
+                        subplot(2,2,1)
+                        imshow(outputav)
+                        title('Average')
+                        subplot(2,2,3)
+                        imshow(outputtest)
+                        title('Original')
+                        subplot(2,2,2)
+                        imshow(outputzig)
+                        title('Zig-Zag')
+                        subplot(2,2,4)
+                        imshow(output)
+                        title('Optimized')
+                    end
+                    % Store mask to future use
+                    %  store_mask_average(:,:,1,i)=maskav;
+                    %  store_mask_average(:,:,2,i)=samplingrate;
+                    
+                    % Assign data, PSNR and SSIM
+                    SNRarrayav(i,1) = SNRarrayav(i,1) + psnr(outputav,refnorm);
+                    SNRarraytest(i,1) = SNRarraytest(i,1 + psnr(outputtest,refnorm);
+                    SNRarrayzig(i,1) = SNRarrayzig(i,1) + psnr(outputzig,refnorm);
+                    ssimarrayav(i,1) = ssimarrayav(i,1) + ssim(outputav,refnorm);
+                    ssimtest(i,1) = ssimtest(i,1) + ssim(outputtest,refnorm);
+                    ssimzig(i,1) = ssimzig(i,1) + ssim(outputzig,refnorm);
+                    energy_av(i,1)= energy_av(i,1) + sum(sum(abs(needrecav)))/sum(sum(abs(testspec)));
+                    energy_test(i,1)= energy_test(i,1) + sum(sum(abs(needrectest)))/sum(sum(abs(testspec)));
+                    energy_zig(i,1)= energy_zig(i,1) + sum(sum(abs(needreczigzag)))/sum(sum(abs(testspec)));
+                    
+                    % set sampling rate
+                    SNRarrayav(i,2) = SNRarrayav(i,2) + samplingrate;
+                    SNRarraytest(i,2) = SNRarraytest(i,2)+ samplingrate;
+                    SNRarrayzig(i,2) = SNRarrayzig(i,2)+samplingrate;
+                    ssimarrayav(i,2) = ssimarrayav(i,2) + samplingrate;
+                    ssimtest(i,2) = ssimtest(i,2)+samplingrate;
+                    ssimzig(i,2) = ssimzig(i,2)+samplingrate;
+                    energy_av(i,2)= energy_av(i,2)+samplingrate;
+                    energy_test(i,2)= energy_test(i,2)+samplingrate;
+                    energy_zig(i,2)= energy_zig(i,2)+samplingrate;
+                    
+                    % PSNR & SSIM
+                    SNRarrayOP(i,1) = SNRarrayOP(i,1) + psnr(output,refnorm);
+                    ssimOP(i,1)= ssimOP(i,1) + ssim(output,refnorm);
+                    samplingrate = 100*sum(sum(a))/obj.N^2;
+                    SNRarrayOP(i,2) = SNRarrayOP(i,2) + samplingrate;
+                    ssimOP(i,2) = ssimOP(i,2) + samplingrate;
+                    energyOP(i,1)= sum(sum(abs(Final_rec)))/sum(sum(abs(testspec)));
+                    energyOP(i,2)= samplingrate;
                 end
-%                 % Store mask to future use
-%                 store_mask_average(:,:,1,i)=maskav;
-%                 store_mask_average(:,:,2,i)=samplingrate;
-               
-                % Assign data, PSNR and SSIM
-                SNRarrayav(i,1) = psnr(outputav,refnorm);
-                SNRarraytest(i,1) = psnr(outputtest,refnorm);
-                SNRarrayzig(i,1) = psnr(outputzig,refnorm);
-                ssimarrayav(i,1) = ssim(outputav,refnorm);
-                ssimtest(i,1) = ssim(outputtest,refnorm);
-                ssimzig(i,1) = ssim(outputzig,refnorm);
-                energy_av(i,1)= sum(sum(abs(needrecav)))/sum(sum(abs(testspec)));
-                energy_test(i,1)= sum(sum(abs(needrectest)))/sum(sum(abs(testspec)));
-                energy_zig(i,1)= sum(sum(abs(needreczigzag)))/sum(sum(abs(testspec)));
-                
-                % set sampling rate
-                SNRarrayav(i,2) = samplingrate;
-                SNRarraytest(i,2) = samplingrate;
-                SNRarrayzig(i,2) = samplingrate;
-                ssimarrayav(i,2) = samplingrate;
-                ssimtest(i,2) = samplingrate;
-                ssimzig(i,2) = samplingrate;
-                energy_av(i,2)= samplingrate;
-                energy_test(i,2)= samplingrate;
-                energy_zig(i,2)= samplingrate;
-                
-                
+                toc;
             end
-            % ----------------END OF ITERATIVE CODE -------------------
             
-
-            
-            for looptime = 1:max_iteration
-   
-                % Threshold to make black and white
-                if obj.THRESHOLD_FLAG ==1
-                    output(output<0.5)=0;
-                    output(output>0.5)=1;
-                end
-                % PSNR & SSIM
-                SNRarrayOP(looptime,1) = psnr(output,refnorm);
-                ssimOP(looptime,1)= ssim(output,refnorm);
-                samplingrate = 100*looptime*endindex/obj.N^2;
-                SNRarrayOP(looptime,2) = samplingrate;
-                ssimOP(looptime,2) = samplingrate;
-                energyOP(looptime,1)= sum(sum(abs(Final_rec)))/sum(sum(abs(testspec)));
-                energyOP(looptime,2)= samplingrate;
-            end
-            toc;
             if obj.PRINTFLAG == 1
                 % Print, otherwise disable to fasten
-                
+
                 % Code for PSNR plot
                 figure
                 plot(SNRarrayav(:,2),SNRarrayav(:,1),'LineWidth',1.5,'Color','b')
                 grid on
                 grid minor
-                % hold on 
+                % hold on
                 % plot (snrown(:,2),snrown(:,1),'r--');
-                hold on 
+                hold on
                 plot (SNRarrayOP(:,2),SNRarrayOP(:,1),'LineWidth',1.5,'Color','m')
-                hold on 
+                hold on
                 plot (SNRarrayzig(:,2),SNRarrayzig(:,1),'LineWidth',1.5,'Color','k')
                 lgd=legend('Average','Optimized','Zigzag','Location','northwest');
                 lgd.FontSize = 30;
@@ -224,18 +224,18 @@ classdef helper
                 title('PSNR Comparison','FontSize',25,'FontName','Times New Roman')
                 xlabel('Sampling Rate / %');
                 ylabel('PSNR / dB');
-                
+
                 % Code for SSIM plot
                 figure
-                plot (SNRarrayav(:,2),SNRarrayav(:,1),'LineWidth',1.5,'Color','b');
+                plot (ssimarrayav(:,2),ssimarrayav(:,1),'LineWidth',1.5,'Color','b');
                 grid on
                 grid minor
                 hold on
                 % plot(ssim_own(:,2),ssim_own(:,1),'r--')
-                % hold on 
-                plot (SNRarrayOP(:,2),SNRarrayOP(:,1),'LineWidth',1.5,'Color','m')
-                hold on 
-                plot (SNRarrayzig(:,2),SNRarrayzig(:,1),'LineWidth',1.5,'Color','k')
+                % hold on
+                plot (ssimOP(:,2),ssimOP(:,1),'LineWidth',1.5,'Color','m')
+                hold on
+                plot (ssimzig(:,2),ssimzig(:,1),'LineWidth',1.5,'Color','k')
                 lgd = legend('Average','Optimized','Zigzag','Location','northwest');
                 lgd.FontSize = 30;
                 lgd.FontName = 'Times New Roman';
@@ -244,8 +244,8 @@ classdef helper
                 title('SSIM Comparison','FontSize',25,'FontName','Times New Roman');
                 xlabel('Sampling Ratio / %');
                 ylabel('SSIM');
-                
-                % Code for energy plot 
+
+                % Code for energy plot
                 figure
                 plot(energy_av(:,2),energy_av(:,1),'LineWidth',1.5,'Color','b')
                 grid on
@@ -268,232 +268,232 @@ classdef helper
 end
 
 function B = Hadamard_trans(A)
-    I = im2double(A);
-    B = fwht2d(I);
+I = im2double(A);
+B = fwht2d(I);
 end
 
 function xx = fwht2d(xx)
-    n = length(xx);
-    for i = 1:n
-        xx1(i,:) = fhtseq(xx(i,:)); 
-    end
-    xx = zeros(n);
-    for j = 1:n
-        xx(:,j) = fhtseq(xx1(:,j)')';
-    end
+n = length(xx);
+for i = 1:n
+    xx1(i,:) = fhtseq(xx(i,:));
+end
+xx = zeros(n);
+for j = 1:n
+    xx(:,j) = fhtseq(xx1(:,j)')';
+end
 end
 
 function xx = ifwht2d(xx)
-    n = length(xx);
-        for i = 1:n
-            xx1(i,:) = ifhtseq(xx(i,:)); 
-        end
-    xx = zeros(n);
-        for j = 1:n
-            xx(:,j) = ifhtseq(xx1(:,j)')';
-        end
+n = length(xx);
+for i = 1:n
+    xx1(i,:) = ifhtseq(xx(i,:));
+end
+xx = zeros(n);
+for j = 1:n
+    xx(:,j) = ifhtseq(xx1(:,j)')';
+end
 end
 
 function x=fhtseq(data)
-    x=bitrevorder(data);
-    n=length(x);
-    k1=n; k2=1; k3=n/2;
-    for i1=1:log2(n)
-        L1=1;
-        for i2=1:k2
-            for i3=1:k3
-                i=i3+L1-1; j=i+k3;
-                temp1= x(i); temp2 = x(j); 
-                if(mod(i2,2) == 0)
-                  x(i) = temp1 - temp2;
-                  x(j) = temp1 + temp2;
-                else
-                  x(i) = temp1 + temp2;
-                  x(j) = temp1 - temp2;
-                end
+x=bitrevorder(data);
+n=length(x);
+k1=n; k2=1; k3=n/2;
+for i1=1:log2(n)
+    L1=1;
+    for i2=1:k2
+        for i3=1:k3
+            i=i3+L1-1; j=i+k3;
+            temp1= x(i); temp2 = x(j);
+            if(mod(i2,2) == 0)
+                x(i) = temp1 - temp2;
+                x(j) = temp1 + temp2;
+            else
+                x(i) = temp1 + temp2;
+                x(j) = temp1 - temp2;
             end
-                L1=L1+k1;
         end
-            k1 = k1/2;  k2 = k2*2;  k3 = k3/2;
+        L1=L1+k1;
     end
-    x=inv(n)*x; %Delete this line for inverse transform
+    k1 = k1/2;  k2 = k2*2;  k3 = k3/2;
+end
+x=inv(n)*x; %Delete this line for inverse transform
 end
 
 function x=ifhtseq(data)
-    x=bitrevorder(data);
-    N=length(x);
-    k1=N; k2=1; k3=N/2;
-    for i1=1:log2(N)
-        L1=1;
-        for i2=1:k2
-            for i3=1:k3
-                i=i3+L1-1; j=i+k3;
-                temp1= x(i); temp2 = x(j); 
-                if(mod(i2,2) == 0)
-                  x(i) = temp1 - temp2;
-                  x(j) = temp1 + temp2;
-                else
-                  x(i) = temp1 + temp2;
-                  x(j) = temp1 - temp2;
-                end
+x=bitrevorder(data);
+N=length(x);
+k1=N; k2=1; k3=N/2;
+for i1=1:log2(N)
+    L1=1;
+    for i2=1:k2
+        for i3=1:k3
+            i=i3+L1-1; j=i+k3;
+            temp1= x(i); temp2 = x(j);
+            if(mod(i2,2) == 0)
+                x(i) = temp1 - temp2;
+                x(j) = temp1 + temp2;
+            else
+                x(i) = temp1 + temp2;
+                x(j) = temp1 - temp2;
             end
-                L1=L1+k1;
         end
-            k1 = k1/2;  k2 = k2*2;  k3 = k3/2;
+        L1=L1+k1;
     end
+    k1 = k1/2;  k2 = k2*2;  k3 = k3/2;
+end
 end
 
 function R = bitrevorder(X)
-    [~,e]=log2(length(X));
-    I=dec2bin(0:pow2(0.5,e)-1);
-    R=X(bin2dec(I(:,e-1:-1:1))+1);
+[~,e]=log2(length(X));
+I=dec2bin(0:pow2(0.5,e)-1);
+R=X(bin2dec(I(:,e-1:-1:1))+1);
 end
 
 function recoverNorm = rec(A)
-    C=ifwht2d(A); %inverse transform & Normalize data
-    vmax=max(max(C));
-    vmin=min(min(C));
-    recoverNorm=(C-vmin)/(vmax-vmin);
+C=ifwht2d(A); %inverse transform & Normalize data
+vmax=max(max(C));
+vmin=min(min(C));
+recoverNorm=(C-vmin)/(vmax-vmin);
 end
 
 function Thresholdvalue = arraylearn(InputArray,dim,Thresholdpercentage)
-    % Threshold defined as percentage
-    temp = reshape(InputArray,[dim*dim 1]);
-    SortedArray = sort(abs(temp),'descend');
-    maxindex = round(length(SortedArray)*Thresholdpercentage);
-    Thresholdvalue = SortedArray(maxindex);
+% Threshold defined as percentage
+temp = reshape(InputArray,[dim*dim 1]);
+SortedArray = sort(abs(temp),'descend');
+maxindex = round(length(SortedArray)*Thresholdpercentage);
+Thresholdvalue = SortedArray(maxindex);
 end
 
 function out=invzigzag(in,num_rows,num_cols)
-    % Inverse Zig-zag scanning
-    % This function reorders a 1-D array into a specifiable
-    % 2-D matrix by implementing the INVERSE ZIG-ZAG SCNANNING procedure.
-    % IN specifies the input 1-D array or vector
-    % NUM_ROWS is the number of rows desired in the output matrix
-    % NUM_COLS is the number of columns desired in the output matrix
-    % OUT is the resulting inverse zig-zag scanned matrix
-    % having the same number of elements as vector IN
-    %
-    % As an example,
-    % IN = [1     2     4     7     5     3     6     8    10    11     9    12];
-    % OUT = INVZIGZAG(IN,4,3)
-    % OUT=
-    %	1     2     3
-    %	4     5     6
-    %	7     8     9
-    %	10    11    12
-    %
-    %
-    % Oluwadamilola (Damie) Martins Ogunbiyi
-    % University of Maryland, College Park
-    % Department of Electrical and Computer Engineering
-    % Communications and Signal Processing
-    % 22-March-2010
-    % Copyright 2009-2010 Black Ace of Diamonds.
+% Inverse Zig-zag scanning
+% This function reorders a 1-D array into a specifiable
+% 2-D matrix by implementing the INVERSE ZIG-ZAG SCNANNING procedure.
+% IN specifies the input 1-D array or vector
+% NUM_ROWS is the number of rows desired in the output matrix
+% NUM_COLS is the number of columns desired in the output matrix
+% OUT is the resulting inverse zig-zag scanned matrix
+% having the same number of elements as vector IN
+%
+% As an example,
+% IN = [1     2     4     7     5     3     6     8    10    11     9    12];
+% OUT = INVZIGZAG(IN,4,3)
+% OUT=
+%	1     2     3
+%	4     5     6
+%	7     8     9
+%	10    11    12
+%
+%
+% Oluwadamilola (Damie) Martins Ogunbiyi
+% University of Maryland, College Park
+% Department of Electrical and Computer Engineering
+% Communications and Signal Processing
+% 22-March-2010
+% Copyright 2009-2010 Black Ace of Diamonds.
 
-    tot_elem=length(in);
+tot_elem=length(in);
 
-    if nargin>3
-        error('Too many input arguments');
-    elseif nargin<3
-        error('Too few input arguments');
+if nargin>3
+    error('Too many input arguments');
+elseif nargin<3
+    error('Too few input arguments');
+end
+
+% Check if matrix dimensions correspond
+if tot_elem~=num_rows*num_cols
+    error('Matrix dimensions do not coincide');
+end
+
+
+% Initialise the output matrix
+out=zeros(num_rows,num_cols);
+
+cur_row=1;	cur_col=1;	cur_index=1;
+
+% First element
+%out(1,1)=in(1);
+
+while cur_index<=tot_elem
+    if cur_row==1 & mod(cur_row+cur_col,2)==0 & cur_col~=num_cols
+        out(cur_row,cur_col)=in(cur_index);
+        cur_col=cur_col+1;							%move right at the top
+        cur_index=cur_index+1;
+        
+    elseif cur_row==num_rows & mod(cur_row+cur_col,2)~=0 & cur_col~=num_cols
+        out(cur_row,cur_col)=in(cur_index);
+        cur_col=cur_col+1;							%move right at the bottom
+        cur_index=cur_index+1;
+        
+    elseif cur_col==1 & mod(cur_row+cur_col,2)~=0 & cur_row~=num_rows
+        out(cur_row,cur_col)=in(cur_index);
+        cur_row=cur_row+1;							%move down at the left
+        cur_index=cur_index+1;
+        
+    elseif cur_col==num_cols & mod(cur_row+cur_col,2)==0 & cur_row~=num_rows
+        out(cur_row,cur_col)=in(cur_index);
+        cur_row=cur_row+1;							%move down at the right
+        cur_index=cur_index+1;
+        
+    elseif cur_col~=1 & cur_row~=num_rows & mod(cur_row+cur_col,2)~=0
+        out(cur_row,cur_col)=in(cur_index);
+        cur_row=cur_row+1;		cur_col=cur_col-1;	%move diagonally left down
+        cur_index=cur_index+1;
+        
+    elseif cur_row~=1 & cur_col~=num_cols & mod(cur_row+cur_col,2)==0
+        out(cur_row,cur_col)=in(cur_index);
+        cur_row=cur_row-1;		cur_col=cur_col+1;	%move diagonally right up
+        cur_index=cur_index+1;
+        
+    elseif cur_index==tot_elem						%input the bottom right element
+        out(end)=in(end);							%end of the operation
+        break										%terminate the operation
     end
-
-    % Check if matrix dimensions correspond
-    if tot_elem~=num_rows*num_cols
-        error('Matrix dimensions do not coincide');
-    end
-
-
-    % Initialise the output matrix
-    out=zeros(num_rows,num_cols);
-
-    cur_row=1;	cur_col=1;	cur_index=1;
-
-    % First element
-    %out(1,1)=in(1);
-
-    while cur_index<=tot_elem
-        if cur_row==1 & mod(cur_row+cur_col,2)==0 & cur_col~=num_cols
-            out(cur_row,cur_col)=in(cur_index);
-            cur_col=cur_col+1;							%move right at the top
-            cur_index=cur_index+1;
-
-        elseif cur_row==num_rows & mod(cur_row+cur_col,2)~=0 & cur_col~=num_cols
-            out(cur_row,cur_col)=in(cur_index);
-            cur_col=cur_col+1;							%move right at the bottom
-            cur_index=cur_index+1;
-
-        elseif cur_col==1 & mod(cur_row+cur_col,2)~=0 & cur_row~=num_rows
-            out(cur_row,cur_col)=in(cur_index);
-            cur_row=cur_row+1;							%move down at the left
-            cur_index=cur_index+1;
-
-        elseif cur_col==num_cols & mod(cur_row+cur_col,2)==0 & cur_row~=num_rows
-            out(cur_row,cur_col)=in(cur_index);
-            cur_row=cur_row+1;							%move down at the right
-            cur_index=cur_index+1;
-
-        elseif cur_col~=1 & cur_row~=num_rows & mod(cur_row+cur_col,2)~=0
-            out(cur_row,cur_col)=in(cur_index);
-            cur_row=cur_row+1;		cur_col=cur_col-1;	%move diagonally left down
-            cur_index=cur_index+1;
-
-        elseif cur_row~=1 & cur_col~=num_cols & mod(cur_row+cur_col,2)==0
-            out(cur_row,cur_col)=in(cur_index);
-            cur_row=cur_row-1;		cur_col=cur_col+1;	%move diagonally right up
-            cur_index=cur_index+1;
-
-        elseif cur_index==tot_elem						%input the bottom right element
-            out(end)=in(end);							%end of the operation
-            break										%terminate the operation
-        end
-    end
+end
 end
 
 function output = set201(Thrs,input,N)
-    output = zeros(N,N);
-    output(abs(input)<=Thrs)=0;
-    output(abs(input)>Thrs)=1;
+output = zeros(N,N);
+output(abs(input)<=Thrs)=0;
+output(abs(input)>Thrs)=1;
 end
 
 function SortedArray = extractarray(InputArray,dim)
-    temp = reshape(InputArray,[dim*dim 1]);
-    SortedArray = sort(abs(temp),'descend');
+temp = reshape(InputArray,[dim*dim 1]);
+SortedArray = sort(abs(temp),'descend');
 end
 
 function top5 = my_av_dist(input_data,correct10,P_N,ROW_N,Crow,Ccol,top)
 
-            top10 = zeros(ROW_N,1,P_N);
+top10 = zeros(ROW_N,1,P_N);
 
-            average_array = zeros(P_N,2);
+average_array = zeros(P_N,2);
 
-            for pgnum=1:P_N
-                tempspec = input_data(:,:,pgnum);
-                for i= 1:ROW_N
-                    top10(i,1,pgnum)=tempspec(Crow(i),Ccol(i));
-                end
+for pgnum=1:P_N
+    tempspec = input_data(:,:,pgnum);
+    for i= 1:ROW_N
+        top10(i,1,pgnum)=tempspec(Crow(i),Ccol(i));
+    end
+    
+    min_dist_var = (top10(i,1,pgnum)-correct10).^2;
+    dist = sqrt(sum(min_dist_var(:)));
+    average_array(pgnum,1) = dist;
+    average_array(pgnum,2) = pgnum;
+end
 
-                min_dist_var = (top10(i,1,pgnum)-correct10).^2;
-                dist = sqrt(sum(min_dist_var(:)));
-                average_array(pgnum,1) = dist;
-                average_array(pgnum,2) = pgnum;
-            end
-
-            sorted_average = sortrows(average_array,1,'descend');
-            top5= sorted_average(1:top,2);
+sorted_average = sortrows(average_array,1,'descend');
+top5= sorted_average(1:top,2);
 end
 
 function spec = HTransform(raw_data)
-    spec = zeros(size(raw_data,1),size(raw_data,2),size(raw_data,3));
-    for i = 1:size(raw_data,3)
-        spec(:,:,i) = Hadamard_trans(raw_data(:,:,i));
-    end
+spec = zeros(size(raw_data,1),size(raw_data,2),size(raw_data,3));
+for i = 1:size(raw_data,3)
+    spec(:,:,i) = Hadamard_trans(raw_data(:,:,i));
+end
 end
 
 function img = img_norm(image_input)
-    refdouble = imresize(im2double(image_input),[32 32]);
-    vmax=max(max(refdouble));
-    vmin=min(min(refdouble));
-    img=(refdouble-vmin)/(vmax-vmin);
+refdouble = imresize(im2double(image_input),[32 32]);
+vmax=max(max(refdouble));
+vmin=min(min(refdouble));
+img=(refdouble-vmin)/(vmax-vmin);
 end
